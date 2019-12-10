@@ -27,6 +27,19 @@ from di_sensors import inertial_measurement_unit
 from easygopigo3 import *
 import time
 
+Module3
+MINIMUM_VOLTAGE = 7.0
+DEBUG = False
+MOTORS_SPEED = 250 # see documentation
+#TODO###############
+import csv
+#index number for all loops
+i = 0
+#OPTIONAL###########
+#for Georgia  -5° 29'
+MAGNETIC_DECLINATION =  -5
+#TODO###############
+
 #TODOCODE##################
 import picamera
 from PIL import Image
@@ -36,6 +49,7 @@ MINIMUM_VOLTAGE = 7.0
 DEBUG = False
 MOTORS_SPEED = 250 # see documentation
 MAGNETIC_DECLINATION = 0
+master
 
 
 def getNorthPoint(imu):
@@ -96,6 +110,60 @@ def statisticalNoiseReduction(values, std_factor_threshold = 2):
 
     return list(valarray)
 
+Module3
+#TODOCODE################################################################333
+def squarepath(trigger):
+    gopigo3_robot = EasyGoPiGo3()
+    my_distance_sensor = gopigo3_robot.init_distance_sensor()
+    
+    j = 1
+    #4 cardinal NESW directions
+    card_list = ['N','E','S','W']
+
+
+    def drive_and_turn(j,dist=999):
+        gopigo3_robot.reset_encoders()
+        #drive autonomously until Ctrl-C pressed
+        #check if an obstacle faced within 250mm (25cm)
+        while not (trigger.is_set() or dist<=250):
+            gopigo3_robot.forward()
+            dist = my_distance_sensor.read_mm()
+            print("Distance Sensor Reading: {} mm ".format(dist))
+            #enocder average values to get distance in cm moved
+            encoders_read = round(gopigo3_robot.read_encoders_average())
+            
+            #write sensor values to a file
+            global i
+            row = [i, encoders_read, dist, j]
+            with open('problem2_pathtrace.csv', 'a') as csvFile:
+                writer = csv.writer(csvFile)
+                writer.writerow(row)
+                csvFile.close()
+            i+=1
+
+            if(encoders_read) >= 50:
+                #if 50 cm crossed, stop and take right turn (NESW directions)
+                gopigo3_robot.stop()
+                gopigo3_robot.turn_degrees(90)
+
+                break
+        if(dist<250):
+            #when object within 25cm encountered
+            gopigo3_robot.stop()
+            #orbit around the obstacle at radius 30 deg 
+            gopigo3_robot.orbit(180, 30)
+            gopigo3_robot.stop()
+            return
+        else:
+            return
+
+    for x in range(4):
+        drive_and_turn(card_list[x])
+
+    #return to main func from where we start square from North again
+    return
+#TODOCODE################################################################333
+master
 
 def orientate(trigger, simultaneous_launcher, sensor_queue):
     """
@@ -216,8 +284,12 @@ def robotControl(trigger, simultaneous_launcher, motor_command_queue, sensor_que
     try:
         gopigo3_robot = EasyGoPiGo3()
         #TODO CODE################
+Module3
+        #my_distance_sensor = gopigo3_robot.init_distance_sensor()
+
         i = 0
         my_distance_sensor = gopigo3_robot.init_distance_sensor()
+master
         #TODO CODE################
     except IOError:
         print("GoPiGo3 robot not detected")
@@ -249,6 +321,16 @@ def robotControl(trigger, simultaneous_launcher, motor_command_queue, sensor_que
     rotational_factor = 0.30
     accepted_minimum_by_drivers = 6
 
+Module3
+    #TODO CODE: Define here so that initialized once and can be modifed later in square code
+    
+    with open('problem2_pathtrace.csv', 'w') as csvfile:
+        fieldnames = ['row_num', 'encoder_value','distance_value','cardinal direction']
+        writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+        writer.writeheader()
+
+
+master
     # while CTRL-C is not pressed, the synchronization between threads didn't fail and while the batteries' voltage isn't too low
     while not (trigger.is_set() or simultaneous_launcher.broken or gopigo3_robot.volt() <= MINIMUM_VOLTAGE):
         # read from the queue of the keyboard
@@ -268,6 +350,12 @@ def robotControl(trigger, simultaneous_launcher, motor_command_queue, sensor_que
         elif command == "east":
             direction_degrees = 90.0
         elif command == "north":
+Module3
+            #TODOCODE#############
+            #let us start square traversal once set as North
+            move = True
+
+master
             direction_degrees = 0.0
         elif command == "south":
             direction_degrees = 180.0
@@ -297,6 +385,12 @@ def robotControl(trigger, simultaneous_launcher, motor_command_queue, sensor_que
         if move is False:
             gopigo3_robot.stop()
         else:
+Module3
+            #TODOCODE###########
+            #starts once NORTH is set
+            squarepath(trigger)
+            #TODOCODE###########
+            
             gopigo3_robot.forward()
             #TODO CODE################
             dist_value = my_distance_sensor.read_mm()
@@ -310,6 +404,7 @@ def robotControl(trigger, simultaneous_launcher, motor_command_queue, sensor_que
                 img.save("./module2_problem2_"+str(i)+".jpg")
                 i+=1
             #TODO CODE################
+master
 
         sleep(0.001)
 
