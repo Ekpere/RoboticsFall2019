@@ -27,6 +27,7 @@ from di_sensors import inertial_measurement_unit
 from easygopigo3 import *
 import time
 
+Module3
 MINIMUM_VOLTAGE = 7.0
 DEBUG = False
 MOTORS_SPEED = 250 # see documentation
@@ -38,6 +39,17 @@ i = 0
 #for Georgia  -5° 29'
 MAGNETIC_DECLINATION =  -5
 #TODO###############
+
+#TODOCODE##################
+import picamera
+from PIL import Image
+#TODOCODE##################
+
+MINIMUM_VOLTAGE = 7.0
+DEBUG = False
+MOTORS_SPEED = 250 # see documentation
+MAGNETIC_DECLINATION = 0
+master
 
 
 def getNorthPoint(imu):
@@ -98,6 +110,7 @@ def statisticalNoiseReduction(values, std_factor_threshold = 2):
 
     return list(valarray)
 
+Module3
 #TODOCODE################################################################333
 def squarepath(trigger):
     gopigo3_robot = EasyGoPiGo3()
@@ -150,6 +163,7 @@ def squarepath(trigger):
     #return to main func from where we start square from North again
     return
 #TODOCODE################################################################333
+master
 
 def orientate(trigger, simultaneous_launcher, sensor_queue):
     """
@@ -270,7 +284,12 @@ def robotControl(trigger, simultaneous_launcher, motor_command_queue, sensor_que
     try:
         gopigo3_robot = EasyGoPiGo3()
         #TODO CODE################
+Module3
         #my_distance_sensor = gopigo3_robot.init_distance_sensor()
+
+        i = 0
+        my_distance_sensor = gopigo3_robot.init_distance_sensor()
+master
         #TODO CODE################
     except IOError:
         print("GoPiGo3 robot not detected")
@@ -302,6 +321,7 @@ def robotControl(trigger, simultaneous_launcher, motor_command_queue, sensor_que
     rotational_factor = 0.30
     accepted_minimum_by_drivers = 6
 
+Module3
     #TODO CODE: Define here so that initialized once and can be modifed later in square code
     
     with open('problem2_pathtrace.csv', 'w') as csvfile:
@@ -309,6 +329,8 @@ def robotControl(trigger, simultaneous_launcher, motor_command_queue, sensor_que
         writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
         writer.writeheader()
 
+
+master
     # while CTRL-C is not pressed, the synchronization between threads didn't fail and while the batteries' voltage isn't too low
     while not (trigger.is_set() or simultaneous_launcher.broken or gopigo3_robot.volt() <= MINIMUM_VOLTAGE):
         # read from the queue of the keyboard
@@ -328,9 +350,12 @@ def robotControl(trigger, simultaneous_launcher, motor_command_queue, sensor_que
         elif command == "east":
             direction_degrees = 90.0
         elif command == "north":
+Module3
             #TODOCODE#############
             #let us start square traversal once set as North
             move = True
+
+master
             direction_degrees = 0.0
         elif command == "south":
             direction_degrees = 180.0
@@ -360,11 +385,26 @@ def robotControl(trigger, simultaneous_launcher, motor_command_queue, sensor_que
         if move is False:
             gopigo3_robot.stop()
         else:
+Module3
             #TODOCODE###########
             #starts once NORTH is set
             squarepath(trigger)
             #TODOCODE###########
             
+            gopigo3_robot.forward()
+            #TODO CODE################
+            dist_value = my_distance_sensor.read_mm()
+            print("Distance Sensor Reading: {} mm ".format(my_distance_sensor.read_mm()))
+            if dist_value < 500:
+                output = np.empty((480, 640, 3), dtype = np.uint8)
+                with picamera.PiCamera() as camera:
+                    camera.resolution = (640, 480)
+                    camera.capture(output, format = 'rgb', use_video_port = True)
+                img = Image.fromarray(output)
+                img.save("./module2_problem2_"+str(i)+".jpg")
+                i+=1
+            #TODO CODE################
+master
 
         sleep(0.001)
 
